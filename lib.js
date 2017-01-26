@@ -452,6 +452,10 @@ class Num {
 		this.val = math.floor(this.val);
 		return this;
 	}
+	print() {
+		console.log(this.val);
+		return this;
+	}
 }
 
 function reverse_string(str) {
