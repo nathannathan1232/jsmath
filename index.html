@@ -1,1 +1,546 @@
-Test
+<head>
+	<script>
+  var math = {
+	PI: '3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748815209209628292540917153643678925903600113305305488204665213841469519415116094330572703657595919530921861173819326117931051185480744623799627495673518857527248912279381830119491298336733624406566430860213949463952247371907021798609437027705392171762931767523846748184676694051320005681271452635608277857713427577896091736371787214684409012249534301465495853710507922796892589235420199561121290219608640344181598136297747713099605187072113499999983729780499510597317328160963185950244594553469083026425223082533446850352619311881710100031378387528865875332083814206171776691473035982534904287554687311595628638823537875937519577818577805321712268066130019278766111959092164201989',
+	E: '2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274274663919320030599218174135966290435729003342952605956307381323286279434907632338298807531952510190115738341879307021540891499348841675092447614606680822648001684774118537423454424371075390777449920695517027618386062613313845830007520449338265602976067371132007093287091274437470472306969772093101416928368190255151086574637721112523897844250569536967707854499699679468644549059879316368892300987931277361782154249992295763514822082698951936680331825288693984964651058209392398294887933203625094431173012381970684161403970198376793206832823764648042953118023287825098194558153017567173613320698112509961818815930416903515988885193458072738667385894228792284998920868058257492796104841984443634632449684875602336248270419786232090021609902353043699418491463140934317381436405462531520961836908887070167683964243781405927145635490613031072085103837505101157477041718986106873969655212671546889570350354',
+	plus(a, b) {
+		if(a === "." || b === ".") return ".";
+		a = Number(a);
+		b = Number(b);
+		return a + b + '';
+	},
+	minus(a, b) {
+		if(a === "." || b === ".") return ".";
+		a = Number(a);
+		b = Number(b);
+		return a - b + '';
+	},
+	times(a, b) {
+		if(a === "." || b === ".") return ".";
+		a = Number(a);
+		b = Number(b);
+		return a * b + '';
+	},
+
+	/* ADDITION */
+	calc_add(a, b) {
+		a = reverse_string(a);
+		b = reverse_string(b);
+		var n = a.length > b.length ? a.length : b.length;
+		var digit, carry = 0, ans = '';
+		for(var i = 0; i < n + 1; i++) {
+			digit = this.plus(a[i] || 0, b[i] || 0);
+			if(digit !== '.') {
+				digit = Number(digit) + carry;
+				carry = 0;
+				while(digit > 9) {
+					digit -= 10;
+					carry += 1;
+				}
+			}
+			ans += digit + '';
+		}
+		return reverse_string(ans);
+	},
+	add(nums, b) {
+		if(typeof nums !== "object" && b) nums = [nums, b];
+		var result;
+		for(var i = 1; i < nums.length; i++) {
+
+			var a = nums[i], b = result || nums[i - 1];
+			var both = this.equalize_decimals(a, b);
+			a = both.a;
+			b = both.b;
+			if(!this.is_negative(a) && !this.is_negative(b)) {
+				result = this.calc_add(a, b);
+			} else if(this.is_negative(a) && this.is_negative(b)) {
+				result = '-' + this.calc_add(this.abs(a), this.abs(b));
+			} else if(this.is_negative(b)) {
+				result = this.subtract(a, this.abs(b));
+			} else if(this.is_negative(a)) {
+				result = '-' + this.subtract(b, this.abs(a));
+			}
+
+		}
+		return this.fix(result);
+	},
+
+	/* SUBTRACTION */
+	calc_sub(a, b) {
+		a = reverse_string(a);
+		b = reverse_string(b);
+		var n = greatest(a.length, b.length);
+		var digit, carry = 0, ans = '';
+		for(var i = 0; i < n + 1; i++) {
+			digit = this.minus(a[i] || 0, b[i] || 0);
+			if(digit !== '.') {
+				digit = Number(digit) - carry;
+				carry = 0;
+				while(digit < 0) {
+					digit += 10;
+					carry += 1;
+				}
+			}
+			ans += digit + '';
+		}
+		return reverse_string(ans);
+	},
+	subtract(nums, b) {
+		if(typeof nums !== "object" && b) nums = [nums, b];
+		var result;
+		for(var i = 1; i < nums.length; i++) {
+			var a = nums[i], b = result || nums[i - 1];
+			var both = this.equalize_decimals(b, a);
+			a = both.a;
+			b = both.b;
+			if(this.more_than(a, b)) {
+				if(this.are_positive([a, b])) {
+					result = this.calc_sub(a, b);
+				} else if(this.are_negative([a, b])) {
+					result = this.subtract(this.abs(b), this.abs(a));
+				} else {
+					result = this.add(a, this.abs(b));
+				}
+			} else if(this.less_than(a, b)) {
+				if(this.are_positive([a, b])) {
+					result = '-' + this.calc_sub(b, a);
+				} else if(this.are_negative([a, b])) {
+					result = '-' + this.subtract(this.abs(a), this.abs(b));
+				} else {
+					result = '-' + this.add(b, this.abs(a));
+				}
+			} else {
+				result = '0.0';
+			}
+
+		}
+		return this.fix(result);
+	},
+
+	/* MULTIPLICATION */
+	calc_multiply(a, b) {
+		var decimals = a.match(/\.[0-9]*/g)[0].length + b.match(/\.[0-9]*/g)[0].length - 2;
+		a = reverse_string(a).replace('.', '');
+		b = reverse_string(b).replace('.', '');
+		var n = greatest(a.length, b.length);
+		var sets = Array(n).fill('');
+		for(var j = 0; j < sets.length; j++) {
+			var digit, carry = 0, ans = '';
+			for(var i = 0; i < n + 1; i++) {
+				digit = this.times(b[j] || 0, a[i] || 0);
+				if(digit !== '.') {
+					digit = Number(digit) + carry;
+					carry = 0;
+					while(digit > 9) {
+						digit -= 10;
+						carry += 1;
+					}
+				}
+				ans += digit + '';
+			}
+			sets[j] = ans;
+		}
+		for(var i = 0; i < sets.length; i++)
+			sets[i] = reverse_string(sets[i]) + multiply_chars('0', i);
+		var answer = sets.length < 2 ? sets[0] : this.add(sets);
+		while(answer.length < decimals + 1) answer = '0' + answer;
+		return '0' + insert_char_at(answer, '.', answer.length - decimals);
+	},
+	multiply(nums, b) {
+		if(typeof nums !== "object" && b) nums = [nums, b];
+		var sign = this.find_sign(nums);
+		var result;
+		for(var i = 1; i < nums.length; i++) {
+			var a = nums[i], b = result || nums[i - 1];
+			var both = this.equalize_decimals(a, b);
+			a = both.a;
+			b = both.b;
+			if(this.is_zero(a) || this.is_zero(b))
+				result = '0.0'
+			else
+				result = this.calc_multiply(this.abs(a), this.abs(b));
+		}
+		if(this.is_zero(result)) return '0.0';
+		return sign + this.fix(result + '');
+	},
+
+	/* DIVISION */
+	calc_divide(a, b, acc = 100) {
+		acc += 1;
+		var ans = this.quotient(a, b) + '.0';
+		var i = 0;
+		while(ans.split('.')[1].length < acc) {
+			var test = this.multiply(ans + '', b + '');
+			if(this.less_than(test, a) || this.equal_to(test, a)) {
+				ans = ans.replace(/[0-9]$/, (n) => Number(n) + 1);
+			} else {
+				if(i < acc) {
+					ans = ans.replace(/[0-9]$/, (n) => Number(n) - 1);
+					ans += '0';
+				}
+			}
+		}
+		return ans.replace(/0$/, '');
+	},
+	divide(nums, b, acc) {
+		if(typeof nums !== "object" && b) {
+			nums = [nums, b];
+		} else {
+			acc = b;
+		}
+		var sign = this.find_sign(nums);
+		var result;
+		for(var i = 1; i < nums.length; i++) {
+			var b = nums[i], a = result || nums[i - 1];
+			var both = this.equalize_decimals(a, b);
+			a = both.a;
+			b = both.b;
+			result = this.calc_divide(this.abs(a), this.abs(b), acc);
+		}
+		return sign + result;
+	},
+	/*
+		Finds how much the two numbers need to be rounded to be the same.
+		The result is the first decimal place where they differ.
+		The 1s place would be 0, the 100s place would be 2, etc.
+		@example:
+			accuracy('100', '101') => 0
+			accuracy('.1', '.3') => -1
+			accuracy('300.1', '350.2') => 1
+			accuracy('.001', '.03') => -2
+	*/
+	accuracy(a, b) {
+		var both = this.equalize_decimals(a, b);
+		a = both.a + '0';
+		b = both.b + '0';
+		while(a.length < b.length) a = '0' + a;
+		while(a.length > b.length) b = '0' + b;
+		var decimal = false;
+		for(var i = 0; i < a.length; i++) {
+			if(a[i] === '.') decimal = i;
+			if(a[i] !== b[i]) {
+				if(decimal !== false) {
+					return decimal - i;
+				} else {
+					var place = i;
+					while(a[i] !== '.') {
+						i++;
+					}
+					return i - place - 1;
+				}
+			}
+		}
+	},
+	quotient(a, b) {
+		for(var i = 0; !this.less_than(a, b); i++) {
+			a = this.subtract(a, b);
+		}
+		return i + '';
+	},
+	remainder(a, b) {
+		for(var i = 0; !this.less_than(a, b); i++) {
+			a = this.subtract(a, b);
+		}
+		return a;
+	},
+
+	equal_to(a, b) {
+		var both = this.equalize_decimals(a, b);
+		a = both.a;
+		b = both.b;
+		a = this.fix(a);
+		b = this.fix(b);
+		while(a.length < b.length) a = '0' + a;
+		while(a.length > b.length) b = '0' + b;
+		return a == b;
+	},
+
+	/* MORE THAN */
+	more_than(a, b) {
+		var both = this.equalize_decimals(a, b);
+		a = both.a;
+		b = both.b;
+
+		if(this.is_negative(a) && this.is_negative(b)) {
+			return this.more_than(this.abs(b), this.abs(a));
+		} else if(this.is_negative(a) ^ this.is_negative(b)) {
+			return this.is_negative(a) ? false : true;
+		}
+
+
+		if(a.length > b.length)
+			return true;
+		else if(a.length < b.length)
+			return false;
+
+		for(var i = 0; i < a.length; i++) {
+			if(Number(a[i]) > Number(b[i])) {
+				return true;
+			}
+			else if(Number(a[i]) < Number(b[i])) {
+				return false;
+			}
+		}
+		return false;
+	},
+	less_than(a, b) {
+		return this.more_than(a, b) || this.equal_to(a, b) ? false : true;
+	},
+	is_zero(num) {
+		return num.replace(/[^0-9]|0/g, '').match(/[0-9]/) ? false : true;
+	},
+	equalize_decimals(a, b) {
+		a = a + ''; b = b + '';
+		if(!a.match(/\./))
+			a += '.';
+		if(!b.match(/\./))
+			b += '.';
+		a = a.replace(/^-*\./, (x) => x.replace('.','0.'));
+		b = b.replace(/^-*\./, (x) => x.replace('.','0.'));
+		var a_dec = a.replace(/[^\.]*\./, '').length;
+		var b_dec = b.replace(/[^\.]*\./, '').length;
+		var most_dec = greatest(a_dec, b_dec);
+
+		for(var i = 0; i < (most_dec - a_dec); i++)
+			a += '0';
+		for(var i = 0; i < (most_dec - b_dec); i++)
+			b += '0';
+		return {a: a, b: b}
+	},
+	round(num, dec) {
+		if(!num.match('.')) return num;
+		while(num.split('.')[1].length < dec + 1) num += '0';
+		while(num.split('.')[1].length > dec + 1) num = num.slice(0, num.length - 1);
+		if(num[num.length-1] >= 5) {
+			for(var i = num.length - 2; num[i] == 9; i--){}
+			return num.slice(0, i) + (Number(num[i]) + 1);
+		}
+		return num.replace(/[0-9]$/, '');
+	},
+	floor(num) {
+		return num.match('.') ?
+			num.split('.')[0] :
+			num;
+	},
+	fix(num) {
+		if(num.replace(/\t|\n|\r| |0|\./g, '') === '') return '0';
+		return num.replace(/^-*0*/, (x) => x.replace(/0/g, '')).replace(/\.$/, '').replace(/^\./, '0.');
+	},
+	format(num) {
+
+	},
+	is_negative(num) {
+		return (num + '').match(/^-/) ? true : false;
+	},
+	is_positive(num) {
+		return (num + '').match(/^-/) ? false : true;
+	},
+	are_negative(nums) {
+		for(var i = 0; i < nums.length; i++)
+			if(!this.is_negative(nums[i])) return false;
+		return true;
+	},
+	are_positive(nums) {
+		for(var i = 0; i < nums.length; i++)
+			if(!this.is_positive(nums[i])) return false;
+		return true;
+	},
+	find_sign(nums) {
+		var sum = 0;
+		for(var i = 0; i < nums.length; i++)
+			if(this.is_negative(nums[i])) sum += 1;
+		return sum % 2 ? '-' : '';
+	},
+	abs(num) {
+		return num.replace(/^-/, '');
+	},
+	from_scientific(num) {
+		if(!num.match(/e/i)) return num;
+		num = num.toLowerCase().split('e');
+		var val = num[0] + '';
+		var exp = Number(num[1]);
+		for(var i = 0; i < exp; i++) {
+			val = val.replace(/\.[0-9]/, match => reverse_string(match));
+			if(val[val.length-1] === '.') val += '0';
+		}
+		return val;
+	},
+	to_sceintific(num, dec = 5) {
+		if(num.match(/e/i)) return num;
+		var magnitude = num.replace(/\..*/, '').length - 1;
+		num = num
+			.replace('.', '')
+			.slice(0, dec + 1);
+		num = insert_char_at(num, '.', 1);
+
+		num += 'e' + magnitude;
+		return num;
+
+	},
+	random_long(digits, decimals) {
+		var result = multiply_chars('0', digits)
+		if(decimals)
+			result += '.' + multiply_chars('0', decimals);
+		return result.replace(/0/g, () => Math.random() * 10 << 0);
+	},
+
+	/* SORTING */
+	bubble_sort(arr) {
+		var done = false, max = n = arr.length;
+		while(!done) {
+			done = true;
+			var newmax;
+			for(var i = 1; i < max; i++) {
+				if(this.more_than(arr[i-1], arr[i])) {
+					var tmp 	= arr[i];
+					arr[i] 		= arr[i-1];
+					arr[i-1] 	= tmp;
+					newmax = i;
+					done = false;
+				}
+			}
+			max = newmax;
+		}
+		return arr;
+	},
+
+	/* CHAINING */
+	chain(val) {
+		return new Num(val);
+	},
+
+}
+
+class Num {
+	constructor(val) {
+		this.val = val;
+	}
+	end() {
+		return this.val;
+	}
+	add(val) {
+		this.val = math.add(this.val, val);
+		return this;
+	}
+	multiply(val) {
+		this.val = math.multiply(this.val, val);
+		return this;
+	}
+	subtract(val) {
+		this.val = math.subtract(this.val, val);
+		return this;
+	}
+	divide(val, dec) {
+		this.val = math.divide(this.val, val, dec || 10);
+		return this;
+	}
+	quotient(val) {
+		this.val = math.quotient(this.val, val);
+		return this;
+	}
+	remainder(val) {
+		this.val = math.remainder(this.val, val);
+		return this;
+	}
+	abs() {
+		this.val = math.abs(this.val);
+		return this;
+	}
+	round(dec) {
+		this.val = math.round(this.val, dec);
+		return this;
+	}
+	floor() {
+		this.val = math.floor(this.val);
+		return this;
+	}
+	print() {
+		console.log(this.val);
+		return this;
+	}
+}
+
+function reverse_string(str) {
+	return str.split('').reverse().join('');
+}
+
+function multiply_chars(str, times) {
+	var result = '';
+	for(var i = 0; i < times; i++)
+		result += str;
+	return result;
+}
+
+function insert_char_at(str, char, pos) {
+	return [str.slice(0, pos), char, str.slice(pos)].join('');
+}
+
+function greatest(a, b) {
+	return a > b ? a : b;
+}
+  </script>
+
+	<style>
+		body { margin: none; font-family: monospace; }
+		#main { background: #aaa; width: 80%; position: absolute; left: 10%; top: 10%; padding-bottom: 50px; }
+		textarea { width: 90%; margin-left: 5%; margin-top: 8px; }
+		p { text-align: center; width: 100%; }
+		select { margin-left: 5%; margin-top: 50px; }
+	</style>
+</head>
+<body>
+	<div id="main">
+		<div id="in">
+			<p>Inputs</p>
+			<textarea class="input"></textarea>
+			<textarea class="input"></textarea>
+		</div>
+		<div id="out">
+			<select id="operator">
+				<option value="add">Add</option>
+				<option value="subtract">Subtract</option>
+				<option value="multiply">Multiply</option>
+				<option value="divide">Divide</option>
+			</select>
+			<button id="calculate" onclick="calculate()">Calculate</button>
+			<button id="addinput" onclick="add_input()">Add Input</button>
+			<p>Output</p>
+			<textarea id="output"></textarea>
+			<div id="ans" style="margin-left: 5%; padding: 8px; width: 90%; word-wrap: break-word;"></div>
+		</div>
+	</div>
+	<script>
+  'use strict';
+var ans = '';
+function calculate() {
+	var inputs = document.getElementsByClassName('input');
+	var values = [];
+	for(var i = 0; i < inputs.length; i++)
+		values.push(inputs[i].value);
+	console.log(values)
+	var operation = document.getElementById('operator').value;
+	ans = math[operation](values);
+	document.getElementById('output').value = ans;
+	add_ans(ans);
+}
+
+function add_ans(ans) {
+	document.getElementById('ans').innerHTML = ans + "<hr />" + document.getElementById('ans').innerHTML;
+}
+
+function add_input() {
+	var inputs = document.getElementsByClassName('input');
+	var values = [];
+	for(var i = 0; i < inputs.length; i++)
+		values.push(inputs[i].value);
+	document.getElementById('in').innerHTML += "<textarea class=\"input\"></textarea>";
+	for(var i = 0; i < inputs.length; i++)
+		inputs[i].value = values[i] || '';
+}
+
+var inputs = document.getElementsByClassName('input');
+
+inputs[0].value = math.PI;
+inputs[1].value = math.E;
+  </script>
+</body>
