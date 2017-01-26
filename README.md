@@ -2,7 +2,7 @@
 jsmath is a javascript library that lets you do math with arbitrarily long numbers. The default javascript maximum number is 9007199254740991. With this library, you can do math with numbers up to 10e9007199254740991. Well, a numbers even close to that big would need a hard drive that uses more atoms than there are in the observable universe.
 
 Here are some examples. Check out the test file for more working examples.
-
+```jaavscript
 math.add('99999999999999999', '1');
 
 // => 100000000000000000
@@ -88,3 +88,4 @@ console.log(n);
 console.log(math.multiply(n, '55555'));
 
 // => 125776.520000
+```
